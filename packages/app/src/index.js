@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { render } from "react-dom";
 import ApolloClient, { gql } from "apollo-boost";
 import { ApolloProvider, useQuery } from "@apollo/react-hooks";
@@ -30,41 +30,38 @@ const Users = () => {
     variables: pagination
   });
 
-  if (error) return <p>Error: {error.message}</p>;
-
   const columns = [
     { title: "Name", field: "firstName" },
     { title: "Surname", field: "lastName" }
   ];
 
   const updatePage = async page => {
-    setPagination((data: IPagination) => {
-      Object.assign(data, { page });
-      return data;
-    });
-    await refetch({ variables: pagination });
+    setPagination((data: IPagination) => ({ ...data, page }));
   };
 
   const updatePageSize = async pageSize => {
-    setPagination((data: IPagination) => {
-      Object.assign(data, { pageSize });
-      return data;
-    });
-    await refetch({ variables: pagination });
+    setPagination((data: IPagination) => ({ page: 0, pageSize }));
   };
+
+  useEffect(() => {
+    refetch({ variables: pagination });
+  }, [pagination, refetch]);
+
+  if (error) return <p>Error: {error.message}</p>;
 
   const props = {
     title: "Users",
     columns,
-    data: data ? data.users.data : undefined,
-    isLoading: loading,
     onChangePage: updatePage,
     onChangeRowsPerPage: updatePageSize,
+    isLoading: loading,
+    data: data ? data.users.data : undefined,
     totalCount: data ? data.users.total : undefined,
-    ...pagination
+    page: pagination.page,
+    options: {
+      pageSize: pagination.pageSize
+    }
   };
-
-  console.log(props);
 
   return <MaterialTable {...props} />;
 };
